@@ -1,0 +1,2 @@
+slh-dsa==0.2.5
+cryptography==50.0.1
