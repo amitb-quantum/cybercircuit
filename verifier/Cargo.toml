@@ -1,0 +1,19 @@
+[package]
+name = "cybercircuit-verify"
+description = "Independent verifier for CircuitBreaker evidence bundles (format v1), written from the published spec."
+license = "Apache-2.0"
+repository = "https://github.com/amitb-quantum/cybercircuit"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "cybercircuit-verify"
+path = "src/main.rs"
+
+[dependencies]
+base64 = "0.22.1"
+ring = "0.17.14"
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+slh-dsa = "=0.2.0-rc.5"

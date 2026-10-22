@@ -1,0 +1,50 @@
+name: verifier
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install pinned Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy
+      - name: fmt
+        run: cargo fmt --all -- --check
+      - name: clippy
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: test
+        run: cargo test --locked --workspace
+
+  agreement:
+    name: two verifiers agree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install pinned Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          rustup toolchain install 1.98.1 --profile minimal
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install the Python checker's dependencies
+        run: pip install -r python/requirements.txt
+      - name: Build the Rust verifier
+        run: cargo build --locked --release
+      - name: Rust and Python verdicts match the answer key
+        run: tools/agree.sh target/release/cybercircuit-verify
