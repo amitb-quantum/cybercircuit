@@ -1,6 +1,6 @@
 [package]
 name = "cybercircuit-verify"
-description = "Independent verifier for CircuitBreaker evidence bundles (format v1), written from the published spec."
+description = "Independent verifier for CircuitBreaker evidence bundles (formats v1 and v2), written from the published spec and format contract."
 license = "Apache-2.0"
 repository = "https://github.com/amitb-quantum/cybercircuit"
 version = "0.1.0"

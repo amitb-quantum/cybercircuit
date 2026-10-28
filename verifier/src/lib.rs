@@ -18,35 +18,61 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use slh_dsa::{Sha2_128f, Signature as SlhSignature, VerifyingKey as SlhKey};
 
+pub mod v2;
+
 const SLH_CONTEXT: &[u8] = b"circuitbreaker-checkpoint-v1";
 const P256_SPKI_PREFIX: &str = "3059301306072a8648ce3d020106082a8648ce3d030107034200";
-const ZERO64: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+pub(crate) const ZERO64: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 
 /// The first failed check: the spec section and what failed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Failure {
+    /// Spec section. Format-v2 sections are written `v2 <section>`.
     pub section: &'static str,
     pub detail: String,
+    /// Verification stage (v2 contract §10, 1–7) at which the check failed.
+    pub stage: u8,
+    /// `invalid`, `unsupported_format`, `format_mismatch` or `resource_limit`.
+    pub code: &'static str,
 }
 
 impl fmt::Display for Failure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "§{}: {}", self.section, self.detail)
+        match self.section.strip_prefix("v2 ") {
+            Some(s) => write!(f, "v2 §{}: {}", s, self.detail),
+            None => write!(f, "§{}: {}", self.section, self.detail),
+        }
     }
 }
 
-fn fail<T>(section: &'static str, detail: impl Into<String>) -> Result<T, Failure> {
+/// The v2 contract's stage for a v1 spec section.
+fn v1_stage(section: &str) -> u8 {
+    match section {
+        "1" | "4.1" => 1,
+        "2" | "3" => 3,
+        "5" | "6" => 6,
+        _ => 5,
+    }
+}
+
+pub(crate) fn fail<T>(section: &'static str, detail: impl Into<String>) -> Result<T, Failure> {
     Err(Failure {
         section,
         detail: detail.into(),
+        stage: v1_stage(section),
+        code: "invalid",
     })
 }
 
-fn need(cond: bool, section: &'static str, detail: impl Into<String>) -> Result<(), Failure> {
+pub(crate) fn need(
+    cond: bool,
+    section: &'static str,
+    detail: impl Into<String>,
+) -> Result<(), Failure> {
     if cond { Ok(()) } else { fail(section, detail) }
 }
 
-fn sha(parts: &[&[u8]]) -> [u8; 32] {
+pub(crate) fn sha(parts: &[&[u8]]) -> [u8; 32] {
     let mut h = Sha256::new();
     for p in parts {
         h.update(p);
@@ -54,11 +80,11 @@ fn sha(parts: &[&[u8]]) -> [u8; 32] {
     h.finalize().into()
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-fn unhex(s: &str) -> Option<Vec<u8>> {
+pub(crate) fn unhex(s: &str) -> Option<Vec<u8>> {
     if !s.len().is_multiple_of(2) || !s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
         return None;
     }
@@ -68,11 +94,11 @@ fn unhex(s: &str) -> Option<Vec<u8>> {
         .collect()
 }
 
-fn is_hex64(s: &str) -> bool {
+pub(crate) fn is_hex64(s: &str) -> bool {
     s.len() == 64 && unhex(s).is_some()
 }
 
-fn is_uuid(s: &str) -> bool {
+pub(crate) fn is_uuid(s: &str) -> bool {
     let b = s.as_bytes();
     s.len() == 36
         && b.iter().enumerate().all(|(i, c)| match i {
@@ -82,7 +108,11 @@ fn is_uuid(s: &str) -> bool {
 }
 
 /// Lines of a JSON-lines file: every line ends in `\n`, none is empty.
-fn read_lines(path: &Path, section: &'static str, ascii: bool) -> Result<Vec<String>, Failure> {
+pub(crate) fn read_lines(
+    path: &Path,
+    section: &'static str,
+    ascii: bool,
+) -> Result<Vec<String>, Failure> {
     let name = path.display().to_string();
     let data = match fs::read(path) {
         Ok(d) => d,
@@ -115,15 +145,15 @@ fn read_lines(path: &Path, section: &'static str, ascii: bool) -> Result<Vec<Str
     Ok(lines)
 }
 
-fn json(text: &str, section: &'static str, what: &str) -> Result<Value, Failure> {
+pub(crate) fn json(text: &str, section: &'static str, what: &str) -> Result<Value, Failure> {
     serde_json::from_str(text).or_else(|_| fail(section, format!("{what}: not JSON")))
 }
 
-fn jstr(v: &Value) -> String {
+pub(crate) fn jstr(v: &Value) -> String {
     serde_json::to_string(v).unwrap_or_default()
 }
 
-fn get_str<'a>(
+pub(crate) fn get_str<'a>(
     v: &'a Value,
     key: &str,
     section: &'static str,
@@ -135,7 +165,12 @@ fn get_str<'a>(
     )
 }
 
-fn get_u64(v: &Value, key: &str, section: &'static str, what: &str) -> Result<u64, Failure> {
+pub(crate) fn get_u64(
+    v: &Value,
+    key: &str,
+    section: &'static str,
+    what: &str,
+) -> Result<u64, Failure> {
     v.get(key).and_then(Value::as_u64).map_or_else(
         || {
             fail(
@@ -147,7 +182,12 @@ fn get_u64(v: &Value, key: &str, section: &'static str, what: &str) -> Result<u6
     )
 }
 
-fn exact_keys(v: &Value, keys: &[&str], section: &'static str, what: &str) -> Result<(), Failure> {
+pub(crate) fn exact_keys(
+    v: &Value,
+    keys: &[&str],
+    section: &'static str,
+    what: &str,
+) -> Result<(), Failure> {
     let obj = v
         .as_object()
         .map_or_else(|| fail(section, format!("{what}: not an object")), Ok)?;
@@ -218,11 +258,11 @@ pub fn load_gateway_keys(path: &Path) -> Result<GatewayKeys, Failure> {
 
 // ------------------------------------------------------------ journals §2 §3
 
-struct Journal {
-    journal_id: String,
+pub(crate) struct Journal {
+    pub(crate) journal_id: String,
     /// heads[n] is the head after n records; heads[0] is genesis.
-    heads: Vec<String>,
-    bodies: Vec<Value>,
+    pub(crate) heads: Vec<String>,
+    pub(crate) bodies: Vec<Value>,
 }
 
 fn journal(
@@ -302,7 +342,7 @@ fn journal(
     })
 }
 
-fn decision_journal(path: &Path) -> Result<Journal, Failure> {
+pub(crate) fn decision_journal(path: &Path) -> Result<Journal, Failure> {
     let j = journal(
         path,
         "2",
@@ -340,7 +380,7 @@ fn control_journal(path: &Path) -> Result<Journal, Failure> {
     )
 }
 
-fn is_bookkeeping(body: &Value) -> bool {
+pub(crate) fn is_bookkeeping(body: &Value) -> bool {
     let entry = &body["entry"];
     match entry["kind"].as_str() {
         Some("checkpoint") | Some("anchor") => true,
@@ -403,14 +443,18 @@ fn statement_bytes(s: &Value, what: &str) -> Result<String, Failure> {
 
 /// A checkpoint that passed §4.4.
 #[derive(Clone)]
-struct Checkpoint {
-    statement: Value,
-    digest: String,
+pub(crate) struct Checkpoint {
+    pub(crate) statement: Value,
+    pub(crate) digest: String,
     ecdsa_sig: Vec<u8>,
 }
 
 /// §4.4 checks 1–5 on a signed checkpoint object.
-fn check_signed(cp: &Value, keys: &GatewayKeys, what: &str) -> Result<Checkpoint, Failure> {
+pub(crate) fn check_signed(
+    cp: &Value,
+    keys: &GatewayKeys,
+    what: &str,
+) -> Result<Checkpoint, Failure> {
     exact_keys(
         cp,
         &[
@@ -470,7 +514,7 @@ fn check_signed(cp: &Value, keys: &GatewayKeys, what: &str) -> Result<Checkpoint
     })
 }
 
-fn checkpoints(
+pub(crate) fn checkpoints(
     path: &Path,
     keys: &GatewayKeys,
     dj: &Journal,
@@ -587,7 +631,7 @@ pub fn load_log_key(path: &Path) -> Result<LogKey, Failure> {
     })
 }
 
-fn ecdsa_ok(point: &[u8], msg: &[u8], sig: &[u8]) -> bool {
+pub(crate) fn ecdsa_ok(point: &[u8], msg: &[u8], sig: &[u8]) -> bool {
     UnparsedPublicKey::new(&ECDSA_P256_SHA256_ASN1, point)
         .verify(msg, sig)
         .is_ok()
@@ -620,7 +664,7 @@ fn inclusion(index: u64, size: u64, leaf: [u8; 32], proof: &[[u8; 32]], root: &[
 }
 
 /// §6 checks 1–7 for one anchor against the checkpoint it names.
-fn check_anchor(
+pub(crate) fn check_anchor(
     a: &Value,
     cp: &Checkpoint,
     keys: &GatewayKeys,
@@ -767,6 +811,8 @@ pub struct Options<'a> {
 
 #[derive(Debug, Default)]
 pub struct Summary {
+    /// Bundle format version: 1 or 2.
+    pub format: u8,
     pub key_id: String,
     pub decision_records: usize,
     pub control_records: usize,
@@ -777,6 +823,8 @@ pub struct Summary {
     pub trips: usize,
     /// "trusted", "bundle copy", or "none".
     pub log_key: &'static str,
+    /// Format-v2 totals, outcomes and completeness (v2 contract §9).
+    pub v2: Option<v2::Report>,
 }
 
 pub fn verify(o: &Options) -> Result<Summary, Failure> {
@@ -788,12 +836,56 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
         "1",
         "bundle is signed by a different gateway key than the trusted one",
     )?;
+    // v2 contract §10 step 2: pick the format before reading the journals.
+    if v2::select(o.bundle)? {
+        return v2::verify(o, keys);
+    }
     // §2, §3
     let dj = decision_journal(&o.bundle.join("decision.jsonl"))?;
     let cj = control_journal(&o.bundle.join("control.jsonl"))?;
     // §4
     let chain = checkpoints(&o.bundle.join("checkpoints.jsonl"), &keys, &dj, &cj)?;
-    // §6
+    // §6, §5
+    let (anchors, receipts_checked, log_key) = anchors_and_receipts(o, &keys, &cj, &chain)?;
+    Ok(Summary {
+        format: 1,
+        key_id: keys.key_id,
+        decision_records: dj.bodies.len(),
+        control_records: cj.bodies.len(),
+        checkpoints: chain.len(),
+        anchors,
+        receipts_checked,
+        sealed: sealed(&chain, &dj, &cj),
+        trips: cj
+            .bodies
+            .iter()
+            .filter(|b| b["entry"]["kind"] == "tripped")
+            .count(),
+        log_key,
+        v2: None,
+    })
+}
+
+/// §4.7, unchanged in v2 (v2 contract §8).
+pub(crate) fn sealed(chain: &[Checkpoint], dj: &Journal, cj: &Journal) -> bool {
+    chain.last().is_some_and(|last| {
+        let s = &last.statement;
+        s["decision"]["sequence"].as_u64() == Some(dj.bodies.len() as u64)
+            && cj
+                .bodies
+                .iter()
+                .skip(s["control"]["sequence"].as_u64().unwrap_or(u64::MAX) as usize)
+                .all(is_bookkeeping)
+    })
+}
+
+/// §6 anchors, then §5 receipts. Returns (anchors, receipts checked, log key label).
+pub(crate) fn anchors_and_receipts(
+    o: &Options,
+    keys: &GatewayKeys,
+    cj: &Journal,
+    chain: &[Checkpoint],
+) -> Result<(usize, usize, &'static str), Failure> {
     let anchors_path = o.bundle.join("rekor-anchors.jsonl");
     let anchored_records: Vec<(u64, u64)> = cj
         .bodies
@@ -857,7 +949,7 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
                 },
                 Ok,
             )?;
-            check_anchor(&a, cp, &keys, log, &what)?;
+            check_anchor(&a, cp, keys, log, &what)?;
             seen.push((n, a["entry"]["logIndex"].as_u64().unwrap_or(0)));
             last = n;
             url = Some(u);
@@ -877,7 +969,6 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
             "check 8, the control journal records anchors but the bundle has no anchors file",
         )?;
     }
-    // §5
     let mut receipts_checked = 0;
     if let Some(path) = o.receipts {
         for (i, line) in read_lines(path, "5", false)?.iter().enumerate() {
@@ -887,7 +978,7 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
                 if v["event"] != "checkpoint" {
                     continue;
                 }
-                let cp = check_signed(&v["checkpoint"], &keys, &what)?;
+                let cp = check_signed(&v["checkpoint"], keys, &what)?;
                 (
                     cp.statement["sequence"].as_u64().unwrap_or(0),
                     cp.digest,
@@ -900,7 +991,7 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
                     Some(v.clone()),
                 )
             } else {
-                let cp = check_signed(&v, &keys, &what)?;
+                let cp = check_signed(&v, keys, &what)?;
                 (
                     cp.statement["sequence"].as_u64().unwrap_or(0),
                     cp.digest,
@@ -929,34 +1020,10 @@ pub fn verify(o: &Options) -> Result<Summary, Failure> {
                     || fail("5", format!("{what}: anchor receipts need a log key")),
                     Ok,
                 )?;
-                check_anchor(&a, bundled, &keys, log, &what)?;
+                check_anchor(&a, bundled, keys, log, &what)?;
             }
             receipts_checked += 1;
         }
     }
-    // §4.7
-    let sealed = chain.last().is_some_and(|last| {
-        let s = &last.statement;
-        s["decision"]["sequence"].as_u64() == Some(dj.bodies.len() as u64)
-            && cj
-                .bodies
-                .iter()
-                .skip(s["control"]["sequence"].as_u64().unwrap_or(u64::MAX) as usize)
-                .all(is_bookkeeping)
-    });
-    Ok(Summary {
-        key_id: keys.key_id,
-        decision_records: dj.bodies.len(),
-        control_records: cj.bodies.len(),
-        checkpoints: chain.len(),
-        anchors,
-        receipts_checked,
-        sealed,
-        trips: cj
-            .bodies
-            .iter()
-            .filter(|b| b["entry"]["kind"] == "tripped")
-            .count(),
-        log_key: log_label,
-    })
+    Ok((anchors, receipts_checked, log_label))
 }
