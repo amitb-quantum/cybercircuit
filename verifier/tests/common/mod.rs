@@ -277,7 +277,7 @@ impl Builder {
                         dstate = s.to_owned();
                     }
                     let body = format!(
-                        "{{\"format\":\"circuitbreaker-m2.1\",\"sequence\":{n},\"previous_sha256\":\"{dhead}\",\"decision_id\":\"{}\",\"payload\":{{\"sequence\":{n},{p}}}}}",
+                        "{{\"format\":\"circuitbreaker-m2.1\",\"sequence\":{n},\"previous_sha256\":\"{dhead}\",\"decision_id\":\"{}\",\"payload\":{{\"schema_version\":\"phase1.1\",\"sequence\":{n},{p}}}}}",
                         decision_id(n as u64)
                     );
                     let h = sha(&[b"circuitbreaker.m2.record\0", body.as_bytes()]);
@@ -434,16 +434,25 @@ pub fn artifact_admitted(exec: &str, set: &str, count: u64, total: u64) -> Strin
 }
 
 /// A RiskApplied quarantine at `epoch` (the event's epoch + 1).
+/// Decision payloads in the producer's full shape (v1 §2 payload, "phase1.1").
+const POLICY: &str = "\"instance\":1,\"policy_version\":\"test-v1\",\"policy_sha256\":\"2546fb093f2b7a9bc575ad3ca4dc3d8839e71cc0014f504ed36ff78a0462b7c7\",\"tick\":0";
+
+/// A RiskApplied quarantine at `epoch` (the event's epoch + 1).
 pub fn quarantine_decision(epoch: u64) -> String {
     format!(
-        "\"epoch\":{epoch},\"state\":\"Quarantined\",\"event\":\"RiskApplied\",\"outcome\":\"RESTRICTED\",\"subject\":null"
+        "{POLICY},\"epoch\":{epoch},\"state\":\"Quarantined\",\"event\":\"RiskApplied\",\"subject\":null,\"action\":null,\"resource_digest\":null,\"capability_id\":null,\"lease_id\":null,\"lease\":null,\"requested_authority\":null,\"restriction\":\"Quarantine\",\"outcome\":\"RESTRICTED\",\"reason\":\"RISK_RESTRICTED\",\"exercised_units\":0"
+    )
+}
+
+/// An allowed tool use by `subject` in session-1.
+pub fn use_decision(epoch: u64, subject: &str) -> String {
+    format!(
+        "{POLICY},\"epoch\":{epoch},\"state\":\"Active\",\"event\":\"BrokerUse\",\"subject\":{{\"id\":\"{subject}\",\"session\":\"session-1\"}},\"action\":\"CallTool\",\"resource_digest\":\"06941c3703e82d49a278c4520fffb6af5f4161f99172508a9c5da1d7f59d76ca\",\"capability_id\":\"allow-mark\",\"lease_id\":1,\"lease\":null,\"requested_authority\":null,\"restriction\":null,\"outcome\":\"ALLOW\",\"reason\":\"POLICY_SATISFIED\",\"exercised_units\":1"
     )
 }
 
 pub fn allow_decision(epoch: u64) -> String {
-    format!(
-        "\"epoch\":{epoch},\"state\":\"Active\",\"event\":\"LeaseDecision\",\"outcome\":\"ALLOW\",\"subject\":{{\"id\":\"demo\",\"session\":\"session-1\"}}"
-    )
+    use_decision(epoch, "demo")
 }
 
 pub fn artifact_set(entries: &[(&str, &str, u64)]) -> String {

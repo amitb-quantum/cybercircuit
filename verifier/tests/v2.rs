@@ -823,7 +823,7 @@ fn admission_errors_are_invalid() {
 fn decision_subject_must_match_the_manifest() {
     let b = Builder::new(Profile::default())
         .cp("start")
-        .d("\"epoch\":0,\"state\":\"Active\",\"event\":\"LeaseDecision\",\"outcome\":\"ALLOW\",\"subject\":{\"id\":\"intruder\",\"session\":\"session-1\"}")
+        .d(&use_decision(0, "intruder"))
         .build("subject");
     fails(&b, "subject differs");
 }

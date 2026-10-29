@@ -1,0 +1,1 @@
+{"schema_version":"circuitbreaker.artifact-set.v1","artifacts":[{"id":"dep","filename":"cb_fixture_dep-1.0.0-py3-none-any.whl","bytes":904,"sha256":"4d2caf485ba01249a4191f60c017df737a002ff3975abcc5332fdcafa37e5faf"},{"id":"pip","filename":"pip-26.2.1-py3-none-any.whl","bytes":5621310,"sha256":"dcab7a1f0c860592d68f945558f789b1febd47f844266e04c0558cf62272f711"}]}
