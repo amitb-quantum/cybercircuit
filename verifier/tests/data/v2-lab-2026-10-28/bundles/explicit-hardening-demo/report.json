@@ -1,0 +1,59 @@
+{
+  "schema_version": "circuitbreaker.evidence-bundle.v2",
+  "config_sha256": "160f1102b51ab007fb6767c6908900fdee2a5554a01b12a9813317a1c40a493e",
+  "decision": {
+    "file": "decision.jsonl",
+    "file_sha256": "c5673f976e2eefdb0dfacb004c19c328262372aa3dabcb7ae7ece47cb9f90397",
+    "journal_id": "39483812-788e-4f54-8dd4-71bda4bf1529",
+    "records": 8,
+    "head_sha256": "9e74fdb5a74541e79758bf6bfd3d1aef1a5a7d28940278099c15999a24f41e0a",
+    "final_epoch": 2,
+    "final_state": "Active",
+    "counts": {
+      "BrokerUse ALLOW": 2,
+      "LeaseDecision ALLOW": 2,
+      "LeaseDecision DENY": 2,
+      "Recovery ALLOW": 1,
+      "RiskApplied RESTRICTED": 1
+    }
+  },
+  "control": {
+    "file": "control.jsonl",
+    "file_sha256": "4d46c71df397d2e0460d20977fe973ca0fa2c57bb7d66dcbaf8097d828afd5c1",
+    "records": 29,
+    "tripped": 1,
+    "kill": {
+      "confirmed": 1
+    },
+    "alarm": {
+      "delivered": 11
+    },
+    "peer_rejected": 0,
+    "peer_rejected_suppressed": 0,
+    "model_use": {},
+    "reset_applied": 1,
+    "reset_refused": 0,
+    "checkpoint_records": 9
+  },
+  "checkpoints": {
+    "file": "checkpoints.jsonl",
+    "file_sha256": "f974bac629f289870a8316394664a508eab5dd863e1e33980b8e68817c83b012",
+    "keys_file": "gateway-keys.pub.json",
+    "gateway_key_id": "ad9d80006a32803502f0939e442dbc5f07307e7944b2ec3cd62ec94667b39252",
+    "count": 9,
+    "last_sequence": 9,
+    "last_reason": "shutdown",
+    "sealed": true
+  },
+  "security": {
+    "security_counts_complete": true,
+    "incomplete_reasons": [],
+    "boundary_observed": {},
+    "tripwire_observed": {},
+    "security_suppressed": 0,
+    "model_requests_observed_lower_bound": 0,
+    "model_refusals_observed_lower_bound": 0,
+    "windows_complete": true
+  },
+  "not_claimed": "A review bundle, not proof of compliance. Deletion of whole trailing journal records before export is not detected."
+}

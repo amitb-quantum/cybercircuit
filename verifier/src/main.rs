@@ -1,6 +1,8 @@
 //! `cybercircuit-verify BUNDLE --keys KEYS [--log-key PEM] [--receipts FILE]`
 //!
-//! Exit status: 0 valid, 1 invalid, 2 usage or I/O error.
+//! Exit status: 0 only for VALID; 1 for anything not valid (including an
+//! unsupported format, a resource limit or an unreadable file); 2 only for a
+//! usage error.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -9,9 +11,9 @@ use cybercircuit_verify::{Options, verify};
 
 const USAGE: &str = "usage: cybercircuit-verify BUNDLE_DIR --keys GATEWAY_KEYS [--log-key REKOR_PEM] [--receipts FILE]
 
-Verifies a CircuitBreaker evidence bundle (format v1) against keys and
+Verifies a CircuitBreaker evidence bundle (format v1 or v2) against keys and
 receipts you obtained separately from the bundle. Prints VALID, or INVALID
-with the first failing check and its section in the spec.";
+with the first failing check, its section in the spec, and its stage and reason.";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
@@ -45,6 +47,7 @@ fn main() -> ExitCode {
     println!("bundle: {}", bundle.display());
     match verify(&options) {
         Ok(s) => {
+            println!("format: v{}", s.format);
             println!("gateway key: {} (trusted)", s.key_id);
             println!("log key: {}", s.log_key);
             println!(
@@ -57,11 +60,57 @@ fn main() -> ExitCode {
                 s.trips,
                 if s.sealed { "yes" } else { "no" }
             );
+            if let Some(r) = &s.v2 {
+                println!(
+                    "hardening: increment {}, model mode {}, artifact set {}",
+                    r.increment,
+                    r.model_mode,
+                    r.artifacts
+                        .map_or("none".to_owned(), |n| format!("{n} artifacts"))
+                );
+                println!(
+                    "model requests observed (lower bound) {}, refused (lower bound) {}",
+                    r.model_requests_observed_lower_bound, r.model_refusals_observed_lower_bound
+                );
+                for (k, v) in &r.boundary_violations_observed_lower_bound {
+                    println!("boundary violations {k}: {v} (lower bound)");
+                }
+                for (k, v) in &r.tripwire_presentations_observed_lower_bound {
+                    println!("tripwire presentations {k}: {v} (lower bound)");
+                }
+                let kills: Vec<String> = r.kills.iter().map(|(k, v)| format!("{k} {v}")).collect();
+                println!(
+                    "kills: {}; resets applied {}, refused {}",
+                    if kills.is_empty() {
+                        "none".to_owned()
+                    } else {
+                        kills.join(", ")
+                    },
+                    r.resets_applied,
+                    r.resets_refused
+                );
+                println!(
+                    "admissions {} (host-wide registry checked: {}); releases {:?}",
+                    r.admissions, r.admissions_registry_checked, r.releases
+                );
+                println!(
+                    "security counts complete: {}",
+                    if r.security_counts_complete {
+                        "yes"
+                    } else {
+                        "no"
+                    }
+                );
+                for why in &r.incomplete {
+                    println!("incomplete: {why}");
+                }
+            }
             println!("RESULT: VALID");
             ExitCode::SUCCESS
         }
         Err(f) => {
             println!("RESULT: INVALID, {f}");
+            println!("STAGE: {}; REASON: {}", f.stage, f.code);
             ExitCode::from(1)
         }
     }

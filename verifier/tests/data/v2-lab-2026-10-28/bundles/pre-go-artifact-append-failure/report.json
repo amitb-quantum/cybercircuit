@@ -1,0 +1,51 @@
+{
+  "schema_version": "circuitbreaker.evidence-bundle.v2",
+  "config_sha256": "6dd91629f9b2ea28ae8084d1804a642ad6c3e27be50348e796941d65c150abbd",
+  "decision": {
+    "file": "decision.jsonl",
+    "file_sha256": "f48cd634f112743588775cab558248972cee8b5c2c54e4534dcf75f049cc56d5",
+    "journal_id": "84bf53a6-0bd7-4284-b151-055cdc2ef04d",
+    "records": 0,
+    "head_sha256": "c68c1b587cbb085b4dffa56dc5f9269ba241192ad6a43cefc32eebb7bca5dc21",
+    "final_epoch": 0,
+    "final_state": null,
+    "counts": {}
+  },
+  "control": {
+    "file": "control.jsonl",
+    "file_sha256": "2f4dc867a65fde4cbc644f75729fc635b0123d1f895ee8b76a6bdc9daf0794e8",
+    "records": 3,
+    "tripped": 0,
+    "kill": {},
+    "alarm": {
+      "delivered": 1
+    },
+    "peer_rejected": 0,
+    "peer_rejected_suppressed": 0,
+    "model_use": {},
+    "reset_applied": 0,
+    "reset_refused": 0,
+    "checkpoint_records": 1
+  },
+  "checkpoints": {
+    "file": "checkpoints.jsonl",
+    "file_sha256": "e3221fdfa4a7aca3ad77c8d7a0bf03cf7a7aca29620697184a1e4ac161474012",
+    "keys_file": "gateway-keys.pub.json",
+    "gateway_key_id": "6468e07854951d55362d5c38fcb65057c9468df189e9f319cfaa066bbc843745",
+    "count": 1,
+    "last_sequence": 1,
+    "last_reason": "start",
+    "sealed": false
+  },
+  "security": {
+    "security_counts_complete": false,
+    "incomplete_reasons": [],
+    "boundary_observed": {},
+    "tripwire_observed": {},
+    "security_suppressed": 0,
+    "model_requests_observed_lower_bound": 0,
+    "model_refusals_observed_lower_bound": 0,
+    "windows_complete": true
+  },
+  "not_claimed": "A review bundle, not proof of compliance. Deletion of whole trailing journal records before export is not detected."
+}

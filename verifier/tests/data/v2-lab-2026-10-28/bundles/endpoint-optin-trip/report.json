@@ -1,0 +1,60 @@
+{
+  "schema_version": "circuitbreaker.evidence-bundle.v2",
+  "config_sha256": "915a9954d4aa4032f527371e7b8b87847b8d486bcfc4313e051ea3d6facdfed9",
+  "decision": {
+    "file": "decision.jsonl",
+    "file_sha256": "3167b7dc2cbef3bc6977db24d35874d708e4dba6fffe6c583fa9b1be9bf42c54",
+    "journal_id": "08fe7a0f-25a1-4e6a-8fca-8643ea169bb1",
+    "records": 1,
+    "head_sha256": "fe431c73433d7db26938f58e2dc0c3a30de1c0abc27e1cf9433e28d55eedc92a",
+    "final_epoch": 1,
+    "final_state": "Quarantined",
+    "counts": {
+      "RiskApplied RESTRICTED": 1
+    }
+  },
+  "control": {
+    "file": "control.jsonl",
+    "file_sha256": "f8216089d1a96a9c2e73f18a1a60147c4c7fea5ee4764b0fc55d62dce2a2949f",
+    "records": 15,
+    "tripped": 1,
+    "kill": {
+      "confirmed": 1
+    },
+    "alarm": {
+      "delivered": 4
+    },
+    "peer_rejected": 0,
+    "peer_rejected_suppressed": 0,
+    "model_use": {
+      "completed": 1,
+      "refused": 1
+    },
+    "reset_applied": 0,
+    "reset_refused": 0,
+    "checkpoint_records": 3
+  },
+  "checkpoints": {
+    "file": "checkpoints.jsonl",
+    "file_sha256": "e364b54d15ed9bf17c8fb567b0def87bf87f9f136466885947195b6c88d66305",
+    "keys_file": "gateway-keys.pub.json",
+    "gateway_key_id": "deb8288dcbc3e7f62244ddfab97157305ff2f53a499623bc4d6a5e8bf68963d9",
+    "count": 3,
+    "last_sequence": 3,
+    "last_reason": "shutdown",
+    "sealed": true
+  },
+  "security": {
+    "security_counts_complete": true,
+    "incomplete_reasons": [],
+    "boundary_observed": {
+      "model_endpoint_not_allowlisted:quarantine": 1
+    },
+    "tripwire_observed": {},
+    "security_suppressed": 0,
+    "model_requests_observed_lower_bound": 2,
+    "model_refusals_observed_lower_bound": 1,
+    "windows_complete": true
+  },
+  "not_claimed": "A review bundle, not proof of compliance. Deletion of whole trailing journal records before export is not detected."
+}

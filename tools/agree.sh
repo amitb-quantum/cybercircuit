@@ -11,7 +11,7 @@ while read -r b r want; do
     rargs=(); pargs=()
     if [ "$r" = yes ]; then rargs=(--receipts "$D/receipts.jsonl"); pargs=("$D/receipts.jsonl"); fi
     rust=$("$VERIFY" "$D/bundle-$b" --keys "$D/gateway-keys.pub.json" \
-        --log-key "$D/rekor-log.pub.pem" "${rargs[@]}" | tail -1 | grep -oE 'VALID|INVALID' | head -1) || true
+        --log-key "$D/rekor-log.pub.pem" "${rargs[@]}" | grep -E '^RESULT:' | grep -oE 'INVALID|VALID' | head -1) || true
     py=$(python3 python/spec_check.py "$D/bundle-$b" "$D/gateway-keys.pub.json" \
         "$D/rekor-log.pub.pem" "${pargs[@]}" | tail -1 | grep -oE '^(VALID|INVALID)') || true
     status=ok

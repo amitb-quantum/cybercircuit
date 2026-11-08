@@ -1,0 +1,6 @@
+{
+  "schema_version": "circuitbreaker.gateway-keys.v1",
+  "gateway_key_id": "6468e07854951d55362d5c38fcb65057c9468df189e9f319cfaa066bbc843745",
+  "slh_dsa_sha2_128f": "2dd6ef69d104203070d5e763cab6978f6b91cd2009b89a641b9b2f7e1a456940",
+  "ecdsa_p256": "04c68d5fdadcce3e9ddf7909e25ab0689ad3d1b5d8e33b1eceea17500a26843c00f3168b11929f48ed3b4000c1fed7e76cb1dd3e2b4cf39f9ef3ddd35eb7404cf2"
+}

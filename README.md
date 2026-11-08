@@ -11,9 +11,11 @@ This repository is for checking a bundle without having to trust us. It holds th
 | Path | What it is | Licence |
 | --- | --- | --- |
 | [`spec/evidence-bundle-format-v1.md`](spec/evidence-bundle-format-v1.md) | The evidence bundle format, version 1, revision 1.1: every file, byte layout, signature and check | Apache-2.0 |
-| [`verifier/`](verifier/) | `cybercircuit-verify`, a Rust verifier written from the spec | Apache-2.0 |
+| [`spec/evidence-bundle-format-v2.md`](spec/evidence-bundle-format-v2.md) | Version 2, revision 1.0: the authenticated run profile, the new control chain, and the records for launches, package sets, gateway-observed violations, tripwires, repeat windows and trips | Apache-2.0 |
+| [`verifier/`](verifier/) | `cybercircuit-verify`, a Rust verifier for both versions, written from the spec | Apache-2.0 |
 | [`python/spec_check.py`](python/spec_check.py) | A second verifier in Python, with a different SLH-DSA implementation, used to test the spec | Apache-2.0 |
 | [`verifier/tests/data/challenge-1/`](verifier/tests/data/challenge-1/) | The four bundles of [evidence challenge 1](https://cybercircuit.ai/challenge-1/), its receipts and keys | Apache-2.0 |
+| [`verifier/tests/data/t-ih14-2026-11-05/`](verifier/tests/data/t-ih14-2026-11-05/) | Version 2 bundles from three real coding agents (Claude Code, Codex CLI, Gemini CLI), with their public keys and receipts | Apache-2.0 |
 | [`tools/agree.sh`](tools/agree.sh) | Runs both verifiers on every challenge case; CI fails if they disagree with each other or with the answer key | Apache-2.0 |
 | [`allowed_signers`](allowed_signers) | The public key that signs gateway builds | |
 
@@ -64,7 +66,16 @@ The verifier prints `RESULT: VALID`, or `RESULT: INVALID` with the first failing
 
 Get the gateway keys, the log key and any receipts from somewhere other than the bundle. The bundle carries its own copies, but a forger can replace those as easily as the journals.
 
-The Python checker needs `pip install -r python/requirements.txt`:
+A version 2 bundle from a real agent run, with its receipts:
+
+```bash
+R=verifier/tests/data/t-ih14-2026-11-05/codex
+target/release/cybercircuit-verify $R/bundle --keys $R/gateway-keys.pub.json --receipts $R/alarms.jsonl
+```
+
+For version 2 the verifier also prints the run's hardening profile, observed model traffic and violations (as lower bounds), kill and reset outcomes, and whether the security counts are complete. A failure prints a `STAGE: n; REASON: code` line after the INVALID result.
+
+The Python checker covers version 1 only. It needs `pip install -r python/requirements.txt`:
 
 ```bash
 python3 python/spec_check.py $D/bundle-C $D/gateway-keys.pub.json $D/rekor-log.pub.pem $D/receipts.jsonl
