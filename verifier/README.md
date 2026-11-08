@@ -1,6 +1,6 @@
 # cybercircuit-verify
 
-An independent verifier for CircuitBreaker evidence bundles, format version 1 ([spec](../spec/evidence-bundle-format-v1.md), revision 1.1) and format version 2 (contract v0.3; the published v2 spec is pending). Licensed Apache-2.0.
+An independent verifier for CircuitBreaker evidence bundles, format version 1 ([spec](../spec/evidence-bundle-format-v1.md), revision 1.1) and format version 2 ([spec](../spec/evidence-bundle-format-v2.md), revision 1.0). Licensed Apache-2.0.
 
 It was written from the published spec, not from the gateway's code, and it can only check evidence: it holds no signing keys and cannot produce a bundle.
 
@@ -22,4 +22,4 @@ Dependencies: `sha2`, `ring` (ECDSA verification), `slh-dsa` (RustCrypto, verifi
 
 Format v2 adds: the authenticated `bundle.json` manifest and its profile rules; the v2 control chain and exact canonical bytes of every record; the artifact manifest; launch admissions, gateway-observed violations, tripwire presentations, repeat windows and releases, and their bindings to model-use records, decision-journal restrictions and trips; and §9 totals. v1 bundles are checked exactly as before.
 
-Tests: `tests/v2.rs` builds signed synthetic v2 bundles and checks 48 valid and invalid cases from the contract, including its Appendix A hash vector. With `CC_V2_FIXTURES=DIR` the suite keeps every bundle with its expected verdict, for comparison with other implementations. `tests/challenge.rs` checks the four bundles of evidence challenge 1 against the published answer key, plus targeted tampering (wrong trusted key, edited record, truncated journal, missing anchors file, changed log time, non-canonical checkpoint line).
+Tests: `tests/v2.rs` builds signed synthetic v2 bundles and checks 48 valid and invalid cases from the contract, including its Appendix A hash vector. With `CC_V2_FIXTURES=DIR` the suite keeps every bundle with its expected verdict, for comparison with other implementations. `tests/v2_lab.rs` checks nine bundles exported by the gateway in synthetic lab runs, and `tests/real_agents.rs` checks the bundles from three real agent runs; in both, this verifier must reach the gateway's own verdicts and counts. `tests/challenge.rs` checks the four bundles of evidence challenge 1 against the published answer key, plus targeted tampering (wrong trusted key, edited record, truncated journal, missing anchors file, changed log time, non-canonical checkpoint line).

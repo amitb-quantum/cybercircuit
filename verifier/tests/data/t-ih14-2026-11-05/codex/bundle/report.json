@@ -1,0 +1,63 @@
+{
+  "schema_version": "circuitbreaker.evidence-bundle.v2",
+  "config_sha256": "92d855a6fe0b5c187465942f77b9968459e0efc9c0daf24d855cefc5ba91a295",
+  "decision": {
+    "file": "decision.jsonl",
+    "file_sha256": "4b86e218a087aac62b8b93bcfa837c45d71cfece1e3009c05b290ef94708b0cf",
+    "journal_id": "049908fb-b3a1-448a-b2b6-924693746a94",
+    "records": 13,
+    "head_sha256": "c5f57f72b64d4cc3c409a4c2e74da3eaa600212185357b97199291d628e87dc8",
+    "final_epoch": 2,
+    "final_state": "Active",
+    "counts": {
+      "BrokerUse ALLOW": 5,
+      "LeaseDecision ALLOW": 5,
+      "LeaseDecision DENY": 1,
+      "Recovery ALLOW": 1,
+      "RiskApplied RESTRICTED": 1
+    }
+  },
+  "control": {
+    "file": "control.jsonl",
+    "file_sha256": "bce7100dd500b7364661816dc60029c7e41c379c6c11fcdae43184db9855b8c1",
+    "records": 58,
+    "tripped": 1,
+    "kill": {
+      "confirmed": 1
+    },
+    "alarm": {
+      "delivered": 15
+    },
+    "peer_rejected": 0,
+    "peer_rejected_suppressed": 0,
+    "model_use": {
+      "completed": 13,
+      "refused": 3
+    },
+    "model_use_suppressed": 4,
+    "reset_applied": 1,
+    "reset_refused": 0,
+    "checkpoint_records": 13
+  },
+  "checkpoints": {
+    "file": "checkpoints.jsonl",
+    "file_sha256": "f97f58085e0c2d4e9d77c97ec323137e2a7e3995220acf2bc823b1ef35637e0b",
+    "keys_file": "gateway-keys.pub.json",
+    "gateway_key_id": "dcaefb01abf8122ac87e1bd146a6e649c4347c2f2bff4e389a21404254640952",
+    "count": 13,
+    "last_sequence": 13,
+    "last_reason": "shutdown",
+    "sealed": true
+  },
+  "security": {
+    "security_counts_complete": true,
+    "incomplete_reasons": [],
+    "boundary_observed": {},
+    "tripwire_observed": {},
+    "security_suppressed": 0,
+    "model_requests_observed_lower_bound": 20,
+    "model_refusals_observed_lower_bound": 7,
+    "windows_complete": true
+  },
+  "not_claimed": "A review bundle, not proof of compliance. Deletion of whole trailing journal records before export is not detected."
+}
