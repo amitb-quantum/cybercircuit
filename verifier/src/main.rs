@@ -93,6 +93,9 @@ fn main() -> ExitCode {
                     "admissions {} (host-wide registry checked: {}); releases {:?}",
                     r.admissions, r.admissions_registry_checked, r.releases
                 );
+                if r.increment >= 3 {
+                    println!("registry releases: {}", r.registry_releases);
+                }
                 println!(
                     "security counts complete: {}",
                     if r.security_counts_complete {

@@ -1662,7 +1662,10 @@ pub struct Report {
     pub resets_refused: usize,
     pub admissions: usize,
     pub admissions_registry_checked: usize,
+    /// Keyed by `scope_end`.
     pub releases: BTreeMap<String, usize>,
+    /// Releases recorded with `registry_released: true` (increment 3 only).
+    pub registry_releases: usize,
     pub security_counts_complete: bool,
     /// Why the record is incomplete, in journal order. Empty when nothing is known missing.
     pub incomplete: Vec<String>,
@@ -1723,6 +1726,9 @@ fn report(
                 *r.releases
                     .entry(e["scope_end"].as_str().unwrap_or_default().to_owned())
                     .or_default() += 1;
+                if e["registry_released"] == true {
+                    r.registry_releases += 1;
+                }
             }
             _ => {}
         }
