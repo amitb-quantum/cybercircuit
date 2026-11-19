@@ -16,7 +16,7 @@ This repository is for checking a bundle without having to trust us. It holds th
 | [`python/spec_check.py`](python/spec_check.py) | A second verifier in Python, with a different SLH-DSA implementation, used to test the spec | Apache-2.0 |
 | [`verifier/tests/data/challenge-1/`](verifier/tests/data/challenge-1/) | The four bundles of [evidence challenge 1](https://cybercircuit.ai/challenge-1/), its receipts and keys | Apache-2.0 |
 | [`verifier/tests/data/t-ih14-2026-11-05/`](verifier/tests/data/t-ih14-2026-11-05/) | Version 2 bundles from three real coding agents (Claude Code, Codex CLI, Gemini CLI), with their public keys and receipts | Apache-2.0 |
-| [`verifier/tests/data/3b3-d11-2026-11-19/`](verifier/tests/data/3b3-d11-2026-11-19/) | Version 2 bundles at increment 3 (host-wide storage registry): two valid captures and five cases the verifier must refuse | Apache-2.0 |
+| [`verifier/tests/data/3b3-d11-2026-11-19/`](verifier/tests/data/3b3-d11-2026-11-19/) | Version 2 bundles at increment 3 (host-wide storage registry): three valid captures, a header-only export and four cases that each break one rule | Apache-2.0 |
 | [`tools/agree.sh`](tools/agree.sh) | Runs both verifiers on every challenge case; CI fails if they disagree with each other or with the answer key | Apache-2.0 |
 | [`allowed_signers`](allowed_signers) | The public key that signs gateway builds | |
 

@@ -1,9 +1,9 @@
 //! Format v2, increment 3 (host-wide storage registry). Bundles exported by the
-//! CircuitBreaker gateway's Phase 3B-3 work on 2026-11-19. Two are captures of
-//! real synthetic scopes in a disposable VM; the rest are isolated, re-signed
-//! chains that each break one rule. This verifier was written from the
-//! published spec without the gateway's code; the expected verdicts below are
-//! this verifier's, checked against the producer's own.
+//! CircuitBreaker gateway's Phase 3B-3 work on 2026-11-19, re-exported after
+//! review. Three are captures of real synthetic scopes; the rest are isolated,
+//! re-signed chains that each break one rule. This verifier was written from
+//! the published spec without the gateway's code; the expected verdicts below
+//! are this verifier's, checked against the producer's own.
 
 use std::path::{Path, PathBuf};
 
@@ -21,42 +21,54 @@ fn run(case: &str, key: &str) -> Result<Summary, Failure> {
         bundle: &bundle,
         trusted_keys: &d.join("trusted-keys").join(format!("{key}.pub.json")),
         trusted_log_key: None,
-        receipts: Some(receipts.as_path()),
+        receipts: receipts.exists().then_some(receipts.as_path()),
     })
 }
 
+/// A registry-checked increment-3 capture: one admission and one release.
+fn capture(case: &str) -> cybercircuit_verify::v2::Report {
+    let s = run(case, case).unwrap_or_else(|f| panic!("{case}: {f}"));
+    assert_eq!(s.format, 2, "{case}");
+    assert!(s.sealed, "{case}");
+    assert!(s.receipts_checked > 0, "{case}");
+    let r = s.v2.unwrap();
+    assert_eq!(r.increment, 3, "{case}");
+    assert_eq!(
+        (r.admissions, r.admissions_registry_checked),
+        (1, 1),
+        "{case}"
+    );
+    assert!(r.security_counts_complete, "{case}: {:?}", r.incomplete);
+    r
+}
+
 fn invalid(case: &str, section: &str, detail: &str) {
-    let f = run(case, "valid-admission-release")
-        .err()
-        .unwrap_or_else(|| panic!("{case} verified"));
+    let f = run(case, "valid-admission-release").expect_err(case);
     assert_eq!(f.code, "invalid", "{case}: {f}");
     assert_eq!(f.section, section, "{case}: {f}");
     assert!(f.detail.contains(detail), "{case}: {f}");
 }
 
 #[test]
-fn checked_admission_and_confirmed_registry_release_is_valid() {
-    let s = run("valid-admission-release", "valid-admission-release").unwrap();
-    assert_eq!(s.format, 2);
-    assert!(s.sealed);
-    assert_eq!(s.receipts_checked, 2);
-    let r = s.v2.unwrap();
-    assert_eq!(r.increment, 3);
-    assert_eq!((r.admissions, r.admissions_registry_checked), (1, 1));
+fn confirmed_end_with_registry_release_is_valid() {
+    let r = capture("valid-admission-release");
     assert_eq!(r.releases.get("confirmed"), Some(&1));
-    assert!(r.security_counts_complete, "{:?}", r.incomplete);
+    assert_eq!(r.registry_releases, 1);
 }
 
 #[test]
-fn retained_ownership_is_valid_but_records_no_release() {
-    let s = run("unknown-ownership-retained", "unknown-ownership-retained").unwrap();
-    assert!(s.sealed);
-    assert_eq!(s.receipts_checked, 3);
-    let r = s.v2.unwrap();
-    assert_eq!(r.increment, 3);
-    assert_eq!((r.admissions, r.admissions_registry_checked), (1, 1));
+fn confirmed_end_with_retained_ownership_is_valid_and_not_a_registry_release() {
+    let r = capture("confirmed-end-ownership-retained");
+    assert_eq!(r.releases.get("confirmed"), Some(&1));
+    assert_eq!(r.registry_releases, 0);
+}
+
+#[test]
+fn uncertain_death_is_recorded_as_unknown_with_ownership_retained() {
+    let r = capture("death-uncertain-ownership-retained");
     assert_eq!(r.releases.get("confirmed"), None);
     assert_eq!(r.releases.get("unknown"), Some(&1));
+    assert_eq!(r.registry_releases, 0);
 }
 
 #[test]
@@ -96,15 +108,37 @@ fn release_without_an_admission_is_invalid() {
 }
 
 #[test]
-fn header_only_export_missing_required_files_is_refused() {
-    // v2 §3 requires checkpoints.jsonl and gateway-keys.pub.json in every
-    // bundle. The producer's header-only preflight export omits both; the
-    // private checker called it VALID. Under the published spec it is not.
-    let f = run(
-        "header-only-missing-required-files",
-        "valid-admission-release",
-    )
-    .expect_err("verified without required files");
+fn header_only_preflight_is_valid_unsealed_and_invents_no_admission() {
+    let s = run("header-only-preflight", "valid-admission-release").unwrap();
+    assert!(!s.sealed);
+    assert_eq!((s.checkpoints, s.receipts_checked), (0, 0));
+    let r = s.v2.unwrap();
+    assert_eq!(r.increment, 3);
+    assert_eq!(r.admissions, 0);
+    assert!(r.releases.is_empty());
+    assert!(!r.security_counts_complete);
+}
+
+#[test]
+fn a_bundle_missing_a_required_file_is_refused() {
+    // v2 §3: checkpoints.jsonl and gateway-keys.pub.json are always required.
+    // The first export of the header-only case omitted both.
+    let d = data().join("header-only-preflight");
+    let tmp = std::env::temp_dir().join(format!("cc-inc3-missing-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+    for f in ["bundle.json", "decision.jsonl", "control.jsonl"] {
+        std::fs::copy(d.join(f), tmp.join(f)).unwrap();
+    }
+    let keys = data().join("trusted-keys/valid-admission-release.pub.json");
+    let result = verify(&Options {
+        bundle: &tmp,
+        trusted_keys: &keys,
+        trusted_log_key: None,
+        receipts: None,
+    });
+    let _ = std::fs::remove_dir_all(&tmp);
+    let f = result.expect_err("verified without required files");
     assert_eq!(f.code, "invalid", "{f}");
     assert!(f.detail.contains("gateway-keys.pub.json"), "{f}");
 }
