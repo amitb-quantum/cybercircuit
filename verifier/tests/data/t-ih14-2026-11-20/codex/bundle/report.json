@@ -1,0 +1,64 @@
+{
+  "schema_version": "circuitbreaker.evidence-bundle.v2",
+  "config_sha256": "2143d81566a00b321efc49d2ac8102b8195f4b593140105106900d2fa940d1ae",
+  "decision": {
+    "file": "decision.jsonl",
+    "file_sha256": "c8a35e1f451281a25a849ff5b56560e1d5a6130a07598e1fe2d17c208228b850",
+    "journal_id": "f6588af9-3ee3-4fc0-ad4a-6b2571b3380c",
+    "records": 13,
+    "head_sha256": "18547225609298b0ad0b9a2072e6dafc73521432df024c438662b5d6cdeac440",
+    "final_epoch": 2,
+    "final_state": "Active",
+    "counts": {
+      "BrokerUse ALLOW": 5,
+      "LeaseDecision ALLOW": 5,
+      "LeaseDecision DENY": 1,
+      "Recovery ALLOW": 1,
+      "RiskApplied RESTRICTED": 1
+    }
+  },
+  "control": {
+    "file": "control.jsonl",
+    "file_sha256": "f3686b87093c3567b49ac9b44500f9d0cd04e5d2fa63967ca2ed1cb36ba2922a",
+    "records": 75,
+    "tripped": 1,
+    "kill": {
+      "confirmed": 1
+    },
+    "alarm": {
+      "delivered": 20
+    },
+    "peer_rejected": 0,
+    "peer_rejected_suppressed": 0,
+    "model_use": {
+      "aborted": 1,
+      "completed": 16,
+      "refused": 2
+    },
+    "model_use_suppressed": 4,
+    "reset_applied": 1,
+    "reset_refused": 0,
+    "checkpoint_records": 18
+  },
+  "checkpoints": {
+    "file": "checkpoints.jsonl",
+    "file_sha256": "efc65ec3fdc987233a7fea10bdf2d732aa80917f7846168511ffe4b8d028580e",
+    "keys_file": "gateway-keys.pub.json",
+    "gateway_key_id": "475ff1a91c3da67b0c1c318ad04b6a66737059df5b4c61b058715f7a23e63e8a",
+    "count": 18,
+    "last_sequence": 18,
+    "last_reason": "shutdown",
+    "sealed": true
+  },
+  "security": {
+    "security_counts_complete": true,
+    "incomplete_reasons": [],
+    "boundary_observed": {},
+    "tripwire_observed": {},
+    "security_suppressed": 0,
+    "model_requests_observed_lower_bound": 23,
+    "model_refusals_observed_lower_bound": 6,
+    "windows_complete": true
+  },
+  "not_claimed": "A review bundle, not proof of compliance. Deletion of whole trailing journal records before export is not detected."
+}
